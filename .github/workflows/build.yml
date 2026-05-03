@@ -17,6 +17,31 @@ jobs:
         with:
           gradle-version: 8.5
 
+      # This step creates the file automatically to avoid mobile keyboard errors
+      - name: Fix Manifest
+        run: |
+          mkdir -p app/src/main
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/xml/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:label="Min Browser"
+                  android:usesCleartextTraffic="true"
+                  android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+                  <activity
+                      android:name="com.example.minbrowser.MainActivity"
+                      android:exported="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
       - name: Build with Gradle
         run: |
           chmod +x gradlew || true
