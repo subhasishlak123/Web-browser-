@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/xml/android">
-
     <uses-permission android:name="android.permission.INTERNET" />
-
     <application
-        android:label="Min Browser CLI"
+        android:label="Min Browser"
         android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -17,6 +14,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
     </application>
 </manifest>
