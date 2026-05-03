@@ -17,22 +17,29 @@ jobs:
         with:
           gradle-version: 8.5
 
-      # This step uses hex code \x22 for double quotes to bypass mobile keyboard errors
       - name: Generate Safe Manifest
         run: |
           mkdir -p app/src/main
-          printf "<?xml version=\x221.0\x22 encoding=\x22utf-8\x22?>\n" > app/src/main/AndroidManifest.xml
-          printf "<manifest xmlns:android=\x22http://schemas.android.com/apk/res/xml/android\x22>\n" >> app/src/main/AndroidManifest.xml
-          printf "    <uses-permission android:name=\x22android.permission.INTERNET\x22 />\n" >> app/src/main/AndroidManifest.xml
-          printf "    <application android:label=\x22Min Browser\x22 android:usesCleartextTraffic=\x22true\x22 android:theme=\x22@android:style/Theme.DeviceDefault.NoActionBar\x22>\n" >> app/src/main/AndroidManifest.xml
-          printf "        <activity android:name=\x22com.example.minbrowser.MainActivity\x22 android:exported=\x22true\x22 android:windowSoftInputMode=\x22adjustResize\x22>\n" >> app/src/main/AndroidManifest.xml
-          printf "            <intent-filter>\n" >> app/src/main/AndroidManifest.xml
-          printf "                <action android:name=\x22android.intent.action.MAIN\x22 />\n" >> app/src/main/AndroidManifest.xml
-          printf "                <category android:name=\x22android.intent.category.LAUNCHER\x22 />\n" >> app/src/main/AndroidManifest.xml
-          printf "            </intent-filter>\n" >> app/src/main/activity\n" >> app/src/main/AndroidManifest.xml
-          printf "        </activity>\n" >> app/src/main/AndroidManifest.xml
-          printf "    </application>\n" >> app/src/main/AndroidManifest.xml
-          printf "</manifest>" >> app/src/main/AndroidManifest.xml
+          cat <<'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/xml/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:label="Min Browser"
+                  android:usesCleartextTraffic="true"
+                  android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+                  <activity
+                      android:name="com.example.minbrowser.MainActivity"
+                      android:exported="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
 
       - name: Build APK
         run: |
