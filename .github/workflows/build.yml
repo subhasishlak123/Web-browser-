@@ -12,16 +12,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # This Action installs Gradle 8.5 properly without using the broken 9.4 system
-      - name: Setup Gradle
+      - name: Setup Gradle 8.5
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.5
 
-      - name: Build APK
+      - name: Build with Gradle
         run: |
-          # We don't run 'gradle wrapper', we let the setup-gradle handle it
-          # We call gradle directly now because it is forced to 8.5
+          chmod +x gradlew || true
           gradle assembleDebug --stacktrace
 
       - name: Upload APK
