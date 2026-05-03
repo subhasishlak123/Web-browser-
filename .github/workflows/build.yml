@@ -5,21 +5,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      
-      - name: Force Gradle 8.5
-        run: |
-          gradle wrapper --gradle-version 8.5
-          chmod +x gradlew
-          
-      - name: Build APK
-        run: ./gradlew assembleDebug --stacktrace
 
-      - name: Upload
+      # This Action installs Gradle 8.5 properly without using the broken 9.4 system
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.5
+
+      - name: Build APK
+        run: |
+          # We don't run 'gradle wrapper', we let the setup-gradle handle it
+          # We call gradle directly now because it is forced to 8.5
+          gradle assembleDebug --stacktrace
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: App-Release
