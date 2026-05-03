@@ -10,11 +10,15 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Build APK
+      
+      - name: Force Gradle 8.5
         run: |
-          gradle wrapper
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
-          ./gradlew assembleDebug
+          
+      - name: Build APK
+        run: ./gradlew assembleDebug --stacktrace
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
