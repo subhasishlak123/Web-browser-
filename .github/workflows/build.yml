@@ -15,32 +15,26 @@ jobs:
         with:
           gradle-version: 8.5
 
-      - name: Reconstruct Project Files
+      - name: Reconstruct Project
         run: |
-          # 1. Clean old mess
+          # 1. Clean existing files
           rm -rf app build.gradle settings.gradle gradle.properties
           mkdir -p app/src/main/java/com/example/minbrowser
 
-          # 2. Use Python to write the Manifest WITHOUT using the "quote" key on your keyboard
-          python3 -c "
-          q = chr(34)
-          manifest = [
-              '<?xml version=' + q + '1.0' + q + ' encoding=' + q + 'utf-8' + q + '?>',
-              '<manifest xmlns:android=' + q + 'http://schemas.android.com/apk/res/xml/android' + q + '>',
-              '    <uses-permission android:name=' + q + 'android.permission.INTERNET' + q + ' />',
-              '    <application android:label=' + q + 'Min Browser' + q + ' android:usesCleartextTraffic=' + q + 'true' + q + ' android:theme=' + q + '@android:style/Theme.DeviceDefault.NoActionBar' + q + '>',
-              '        <activity android:name=' + q + 'com.example.minbrowser.MainActivity' + q + ' android:exported=' + q + 'true' + q + '>',
-              '            <intent-filter>',
-              '                <action android:name=' + q + 'android.intent.action.MAIN' + q + ' />',
-              '                <category android:name=' + q + 'android.intent.category.LAUNCHER' + q + ' />',
-              '            </intent-filter>',
-              '        </activity>',
-              '    </application>',
-              '</manifest>'
-          ]
-          with open('app/src/main/AndroidManifest.xml', 'w') as f:
-              f.write('\n'.join(manifest))
-          "
+          # 2. Generate Manifest using Pipe-to-Quote conversion
+          # This avoids the "Smart Quote" bug on mobile keyboards
+          echo '<?xml version=|1.0| encoding=|utf-8|?>
+          <manifest xmlns:android=|http://schemas.android.com/apk/res/xml/android|>
+              <uses-permission android:name=|android.permission.INTERNET| />
+              <application android:label=|MinBrowser| android:theme=|@android:style/Theme.DeviceDefault.NoActionBar|>
+                  <activity android:name=|com.example.minbrowser.MainActivity| android:exported=|true|>
+                      <intent-filter>
+                          <action android:name=|android.intent.action.MAIN| />
+                          <category android:name=|android.intent.category.LAUNCHER| />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>' | tr '|' '"' > app/src/main/AndroidManifest.xml
 
           # 3. Create settings and properties
           echo "include ':app'" > settings.gradle
@@ -101,9 +95,7 @@ jobs:
 
       - name: Build APK
         run: |
-          gradle wrapper
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
