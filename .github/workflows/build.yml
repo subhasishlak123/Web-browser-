@@ -5,42 +5,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
       - name: Setup Gradle 8.5
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.5
 
-      - name: Reconstruct Project
+      - name: Force Reconstruct Project
         run: |
+          # Delete everything to ensure no old files remain
           rm -rf app build.gradle settings.gradle gradle.properties
           mkdir -p app/src/main/java/com/example/minbrowser
+          
+          # Use Python to write files using HEX to avoid mobile keyboard corruption
+          python3 -c "
+          def write_hex(path, hex_str):
+              with open(path, 'wb') as f:
+                  f.write(bytes.fromhex(hex_str))
 
-          # 1. Recreate gradle.properties
-          printf "android.useAndroidX=true\nandroid.enableJetifier=true\n" > gradle.properties
+          # 1. Manifest file (Byte-perfect XML)
+          manifest_hex = '3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d227574662d38223f3e0a3c6d616e696665737420786d6c6e733a616e64726f69643d22687474703a2f2f736368656d61732e616e64726f69642e636f6d2f61706b2f7265732f786d6c2f616e64726f6964223e0a202020203c757365732d7065726d697373696f6e20616e64726f69643a6e616d653d22616e64726f69642e7065726d697373696f6e2e494e5445524e455422202f3e0a202020203c6170706c69636174696f6e20616e64726f69643a6c6162656c3d224d696e42726f777365722220616e64726f69643a757365436c65617274657874547261666669633d22747275652220616e64726f69643a7468656d653d2240616e64726f69643a7374796c652f5468656d652e44657669636544656661756c742e4e6f416374696f6e223e0a20202020202020203c616374697669747920616e64726f69643a6e616d653d222e4d61696e41637469766974792220616e64726f69643a6578706f727465643d2274727565223e0a2020202020202020202020203c696e74656e742d66696c7465723e0a202020202020202020202020202020203c616374696f6e20616e64726f69643a6e616d653d22616e64726f69642e696e74656e742e616374696f6n2e4d41494e22202f3e0a202020202020202020202020202020203c62617465676f727920616e64726f69643a6e616d653d22616e64726f69642e696e74656e742e62617465676f72792e4c41554e4348455222202f3e0a2020202020202020202020203c2f696e74656e742d66696c7465723e0a20202020202020203c2f61637469766974793e0a202020203c2f6170706c69636174696f6e3e0a3c2f6d616e69666573743e'
+          write_hex('app/src/main/AndroidManifest.xml', manifest_hex)
 
-          # 2. Recreate settings.gradle
-          printf "rootProject.name = 'MinBrowser'\ninclude ':app'\n" > settings.gradle
+          # 2. settings.gradle
+          with open('settings.gradle', 'w') as f: f.write(\"include ':app'\")
+          
+          # 3. gradle.properties
+          with open('gradle.properties', 'w') as f: f.write('android.useAndroidX=true\nandroid.enableJetifier=true')
+          "
 
-          # 3. Recreate root build.gradle
+      - name: Write build scripts
+        run: |
           cat <<'EOF' > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
-              dependencies { 
-                  classpath 'com.android.tools.build:gradle:8.2.2'
-                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0'
-              }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.2'; classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0' }
           }
           allprojects { repositories { google(); mavenCentral() } }
           EOF
-
-          # 4. Recreate app/build.gradle
           cat <<'EOF' > app/build.gradle
           plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
           android {
@@ -60,34 +66,20 @@ jobs:
               implementation 'androidx.webkit:webkit:1.10.0'
           }
           EOF
-
-          # 5. Generate Manifest via Hex (Immune to mobile keyboard errors)
-          python3 -c "
-          hex_data = '3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d227574662d38223f3e0a3c6d616e696665737420786d6c6e733a616e64726f69643d22687474703a2f2f736368656d61732e616e64726f69642e636f6d2f61706b2f7265732f786d6c2f616e64726f6964223e0a202020203c757365732d7065726d697373696f6e20616e64726f69643a6e616d653d22616e64726f69642e7065726d697373696f6e2e494e5445524e455422202f3e0a202020203c6170706c69636174696f6e20616e64726f69643a6c6162656c3d224d696e42726f777365722220616e64726f69643a757365436c65617274657874547261666669633d22747275652220616e64726f69643a7468656d653d2240616e64726f69643a7374796c652f5468656d652e44657669636544656661756c742e4e6f416374696f6e223e0a20202020202020203c616374697669747920616e64726f69643a6e616d653d22636f6d2e6578616d706c652e6d696e62726f777365722e4d61696e41637469766974792220616e64726f69643a6578706f727465643d2274727565223e0a2020202020202020202020203c696e74656e742d66696c7465723e0a202020202020202020202020202020203c616374696f6e20616e64726f69643a6e616d653d22616e64726f69642mludGVudC5hY3Rpb24uTUFJTiIgLz4KICAgICAgICAgICAgICAgIDxjYXRlZ29yeSBhbmRyb2lkOm5hbWU9ImFuZHJvaWQuaW50ZW50LmNhdGVnb3J5LkxBVU5DSEVSIiAvPgogICAgICAgICAgICA8L2ludGVudC1maWx0ZXI+CiAgICAgICAgPC9hY3Rpdml0eT4KICAgIDwvYXBwbGljYXRpb24+CjwvbWFuaWZlc3Q+'
-          import binascii
-          # Fixing potential padding/typo in hex stream
-          with open('app/src/main/AndroidManifest.xml', 'w') as f:
-              f.write('<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/xml/android\">\n    <uses-permission android:name=\"android.permission.INTERNET\" />\n    <application android:label=\"Min Browser\" android:usesCleartextTraffic=\"true\" android:theme=\"@android:style/Theme.DeviceDefault.NoActionBar\">\n        <activity android:name=\"com.example.minbrowser.MainActivity\" android:exported=\"true\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.MAIN\" />\n                <category android:name=\"android.intent.category.LAUNCHER\" />\n            </intent-filter>\n        </activity>\n    </application>\n</manifest>')
-          "
-
-          # 6. Recreate MainActivity.kt
           cat <<'EOF' > app/src/main/java/com/example/minbrowser/MainActivity.kt
           package com.example.minbrowser
           import android.os.Bundle
           import android.webkit.*
           import androidx.activity.ComponentActivity
           import androidx.activity.compose.setContent
-          import androidx.compose.foundation.layout.fillMaxSize
-          import androidx.compose.ui.Modifier
           import androidx.compose.ui.viewinterop.AndroidView
           class MainActivity : ComponentActivity() {
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContent {
-                      AndroidView(modifier = Modifier.fillMaxSize(), factory = { context ->
+                      AndroidView(factory = { context ->
                           WebView(context).apply {
                               settings.javaScriptEnabled = true
-                              webViewClient = WebViewClient()
                               loadUrl("https://www.google.com")
                           }
                       })
