@@ -17,19 +17,38 @@ jobs:
         with:
           gradle-version: 8.5
 
-      - name: Generate Perfect Manifest
+      - name: Generate Manifest via Python
         run: |
           mkdir -p app/src/main
-          echo "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48bWFuaWZlc3QgeG1sbnM6YW5kcm9pZD0iaHR0cDovL3NjaGVtYXMuYW5kcm9pZC5jb20vYXBrL3Jlcy94bWwvYW5kcm9pZCIgcGFja2FnZT0iY29tLmV4YW1wbGUubWluYnJvd3NlciI+PHVzZXMtcGVyc2lzc2lvbiBhbmRyb2lkOm5hbWU9ImFuZHJvaWQucGVybWlzc2lvbi5JTlRFUk5FVCIgLz48YXBwbGljYXRpb24gYW5kcm9pZDpsYWJlbD0iTWluIEJyb3dzZXIiIGFuZHJvaWQ6dXNlQ2xlYXJ0ZXh0VHJhZmZpYz0idHJ1ZSIgYW5kcm9pZDp0aGVtZT0iQGFuZHJvaWQ6c3R5bGUvVGhlbWUuRGV2aWNlRGVmYXVsdC5Ob0FjdGlvbiI+PGFjdGl2aXR5IGFuZHJvaWQ6bmFtZT0iY29tLmV4YW1wbGUubWluYnJvd3Nlci5NYWluQWN0aXZpdHkiIGFuZHJvaWQ6ZXhwb3J0ZWQ9InRydWUiPjxpbnRlbnQtZmlsdGVyPjxhY3Rpb24gYW5kcm9pZDpuYW1lPSJhbmRyb2lkLmludGVudC5hY3Rpb24uTUFJTiIgLz48Y2F0ZWdvcnkgYW5kcm9pZDpuYW1lPSJhbmRyb2lkLmludGVudC5jYXRlZ29yeS5MQVVOQ0hFUiIgLz48L2ludGVudC1maWx0ZXI+PC9hY3Rpdml0eT48L2FwcGxpY2F0aW9uPjwvbWFuaWZlc3Q+" | base64 -d > app/src/main/AndroidManifest.xml
+          python3 -c "
+          content = '''<?xml version=\"1.0\" encoding=\"utf-8\"?>
+          <manifest xmlns:android=\"http://schemas.android.com/apk/res/xml/android\">
+              <uses-permission android:name=\"android.permission.INTERNET\" />
+              <application
+                  android:label=\"Min Browser\"
+                  android:usesCleartextTraffic=\"true\"
+                  android:theme=\"@android:style/Theme.DeviceDefault.NoActionBar\">
+                  <activity
+                      android:name=\"com.example.minbrowser.MainActivity\"
+                      android:exported=\"true\"
+                      android:windowSoftInputMode=\"adjustResize\">
+                      <intent-filter>
+                          <action android:name=\"android.intent.action.MAIN\" />
+                          <category android:name=\"android.intent.category.LAUNCHER\" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>'''
+          with open('app/src/main/AndroidManifest.xml', 'w', encoding='utf-8') as f:
+              f.write(content.strip())
+          "
 
-      - name: Fix Project Permissions
+      - name: Initialize Wrapper and Build
         run: |
-          # This creates the missing gradlew file to stop the error in your logs
+          # This creates the gradlew file that was missing in your logs
           gradle wrapper
           chmod +x gradlew
-
-      - name: Build APK
-        run: ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
